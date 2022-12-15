@@ -196,8 +196,8 @@ config:
     nem.network.addressStartChar: # from ./output/node1/config-user.properties
     nem.network.generationHash: # from ./output/node1/config-user.properties
     nem.network.nemesisSignerAddress: # from ./output/node1/config-user.properties
-    nem.network.totalAmount: "9000000000"
-    nem.network.nemesisFilePath: custom-nemesis.bin
+    nem.network.totalAmount: "" # amount should be btw quotes, from ./output/node1/config-user.properties
+    nem.network.nemesisFilePath: custom-nemesis.bin # don't change this
 
 ingress:
   enabled: true
