@@ -48,20 +48,20 @@ Please check out [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intr
         ```yaml
         # configure the tcp configmap
         tcp:
-            7778: localhost:7778
+          7778: localhost:7778
 
         # enable the service and expose the tcp ports.
         # be careful as this will potentially make them
         # available on the public web
         controller:
-            service:
+          service:
             enabled: true
             ports:
-                http: 7890
-                https: 7891
+              http: 7890
+              https: 7891
             targetPorts:
-                http: http
-                https: https
+              http: http
+              https: https
         ```
     2. run the following commands:
         ```bash
