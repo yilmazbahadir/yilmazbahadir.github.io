@@ -264,6 +264,7 @@ kubectl get all --namespace testnet-node1
 ```bash
 kubectl get all --namespace testnet-node2
 ```
+Here is an screenshot of a successful deployment:
 
 ![kubectl-list-all.png](/assets/images/kubectl-list-all.png)
 
@@ -280,7 +281,7 @@ curl http://localhost-node2:7890/chain/height
 ```
 
 ## Uninstall
-To uninstall the helm packages from your K8s cluster, you can run the following commands:
+If anything goes wrong or you are done with your deployment, you can uninstall the helm packages from your K8s cluster, you can run the following commands:
 ```bash
 helm uninstall testnet-node1 --namespace=testnet-node1
 ```
