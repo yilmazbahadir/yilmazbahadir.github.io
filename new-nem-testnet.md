@@ -265,7 +265,7 @@ kubectl get all --namespace testnet-node1
 kubectl get all --namespace testnet-node2
 ```
 
-![kubectl-list-all.png] (./assets/images/kubectl-list-all.png)
+![kubectl-list-all.png](/assets/images/kubectl-list-all.png)
 
 And to verify that the nodes are running with correct configuration, run the following commands
 ```bash
