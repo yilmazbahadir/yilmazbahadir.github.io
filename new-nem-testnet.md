@@ -23,7 +23,7 @@ Kubernetes(abbreviated as K8s [but why?](https://kubernetes.io/docs/concepts/ove
 
 For the development and testing purposes, options are:
 
-1. installing [Docker Desktop](https://www.docker.com/products/docker-desktop/) which has a built-in Kubernetes support (this option is also installing kubectl for you)
+1. (recommended) installing [Docker Desktop](https://www.docker.com/products/docker-desktop/) which has a built-in Kubernetes support (you just need to enable K8s in the settings and it will also install kubectl for you)
 2. install Docker, [minikube](https://minikube.sigs.k8s.io/docs/start/) and [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl) separately.
 
 For production purposes, the options are:
@@ -41,10 +41,9 @@ Please check out [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intr
 
 - [K8s Ingress Nginx Controller](https://github.com/kubernetes/ingress-nginx)
 
-    In order to be able to receive requests from outside of the cluster one of the options is to enable ingress in the Helm Chart values(we’ll delve into it in the following sections) and this will require a Ingress Controller to be present in the current cluster. For local setup we need to install `Ingress NGINX Controller`. (for more options please check out the [Ingress Controllers list](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/))
+    In order to be able to receive requests from outside of the cluster one of the options is to enable ingress in the Helm Chart values(we’ll delve into it in the following sections) and this will require an Ingress Controller to be present in the current cluster. For local setup we need to install `Ingress NGINX Controller`. (for more options please check out the [Ingress Controllers list](https://kubernetes.io/docs/concepts/services-networking/ingress-controllers/))
 
-    1. create a file named `values-nginx-controller.yaml`
-     with the following content:
+    1. create a file named `values-nginx-controller.yaml` in the current directory with the following content:
         ```yaml
         # configure the tcp configmap
         tcp:
@@ -73,13 +72,13 @@ Please check out [https://helm.sh/docs/intro/install/](https://helm.sh/docs/intr
 
   The local path provisioner in Kubernetes is a storage provisioner that allows users to create and manage persistent storage volumes backed by local storage on the nodes in a cluster.
 
-  To install run the following command in your cluster:
+  To install in your kubernetes cluster, run the following command in the current directory:
 
   ```bash
   kubectl apply -f https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.23/deploy/local-path-storage.yaml
   ```
 
-### `nis-client` Docker Image
+### (Optional) Build `nis-client` docker image from source
 By default helm package will automatically pull the required image from [nemofficial/nis-client](https://hub.docker.com/repository/docker/nemofficial/nis-client) Docker Hub repo.
 
 
@@ -95,7 +94,7 @@ docker build -t nis-client .
 # Deployment
 
 ## Pull `nem-helm-charts` package
-Currently `nem-helm-charts` helm package is not published so we need to check out [nem-helm-charts](https://github.com/yilmazbahadir/nem-helm-charts) repository into our local.
+Currently `nem-helm-charts` helm package is not published to a public registery so we need to check out [nem-helm-charts](https://github.com/yilmazbahadir/nem-helm-charts) repository into our local.
 
 
 ```
@@ -136,12 +135,28 @@ python3 -m generator --input ./nemesis.yaml --output nemesis.bin
 Create `nodes.yaml` file for the node information in the following format:
 ```yaml
 nodes:
-  - host: node1.valid-domain-name
+  - host: localhost-node1
     name: node1
-  - host: node2.valid-domain-name
+  - host: localhost-node2
     name: node2
 ```
-Note that you should set a valid domain name for the node hosts and direct them to your machine's internet IP address(you can check it with `curl 'https://api.ipify.org?format=json'`). If you are behind a router please don't forget to forward the ports 7890 and 7778 to your machine in the router settings.
+Since this is a local deployment you don't have to own a publicly available domain name.\
+To set the `localhost-node1` and `localhost-node2` aliases in your local, follow these steps:
+1. Get your local network IP by running `ifconfig`(linux, mac) or `ipconfig`(windows)
+   ```bash
+   ifconfig
+   # find the IP in the output, should be something like 192.168.0.12
+   ```
+2. set the aliases
+   ```
+   sudo vi /etc/hosts
+   # add the following lines, save and quit
+   # Please replace 192.168.0.12 with your actual internal network IP below
+   192.168.0.12 localhost-node1
+   192.168.0.12 localhost-node2
+   ```
+Note that **using** `127.0.0.1` instead of your network IP **won't work!** So please use your internal network IP.
+
 
 And run the following command to generate node configuration to `./output` folder:
 
@@ -182,7 +197,7 @@ We will pass this text file as a value(--set-file) to `helm install` command in 
 
 ### Prepare the values.yaml file for nodes
 
-For `node1` create a file named `values-node1.yaml` with the following content, pay attention to the comments and update the file:
+For `node1` create a file named `values-node1.yaml` (inside workdir-new-nem-testnet/nem-helm-charts) with the following content, pay attention to the comments and update the file:
 ```yaml
 config:
   user:
@@ -205,7 +220,7 @@ ingress:
   annotations:
   hosts:
   # update the hostname below!
-    - host: node1.valid-domain-name
+    - host: # nem.host from ./output/node1/config-user.properties
       paths:
         - path: /
           pathType: ImplementationSpecific
@@ -250,14 +265,18 @@ kubectl get all --namespace testnet-node1
 kubectl get all --namespace testnet-node2
 ```
 
+![kubectl-list-all.png] (./assets/images/kubectl-list-all.png)
+
 And to verify that the nodes are running with correct configuration, run the following commands
 ```bash
-curl http://node1.valid-domain-name:7890/node/info
+curl http://localhost-node1:7890/node/info
+curl http://localhost-node2:7890/node/info
 ```
 
 To check the nodes are harvesting, you should be observing that the height is increasing around every minute by running:
 ```bash
-curl http://node1.valid-domain-name:7890/chain/height
+curl http://localhost-node1:7890/chain/height
+curl http://localhost-node2:7890/chain/height
 ```
 
 ## Uninstall
