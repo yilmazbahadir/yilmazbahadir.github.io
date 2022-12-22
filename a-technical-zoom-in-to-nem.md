@@ -185,23 +185,42 @@ For P2P endpoints please see `org.nem.core.node.NisPeerId` class and also `org.n
 ## How does peer to peer communication work?
 When the node boots, while it's booting the peer network, it loads the initial(pre-trusted) peer list from the `peer-config_[mainnet|testnet].json` file.
 
-During the boot there created a scheduled task to refresh the peer nodes.
+During the boot there created a scheduled task(in `PeerNetworkScheduler.addTasks`) to refresh the peer nodes.
 
+`NodeRefresher` refreshes the peer list, by making authenticated calls to `node/info` and `/node/peer-list/active` and stores the info in the local cache on a peer (selected using `PreTrustAwareNodeSelector`).
 
 Peers call `@P2PApi` annotated API endpoints, mostly authenticated by sending a challenge and verifying the returned signature(whether signed by the expected node).
 
 ![Peer to Peer Call](assets/images/nem-technical-zoom-in-p2p-call.png)
 
-
-## How would you trust a node? EigenTrust algorithm, Node Experiences
-Also during the boot, there created a scheduled task `updateNodeExperiences` with a complex delay strategy _can be seen below_.
+## How does a peer trust a peer? EigenTrust algorithm, Node Experiences
+During the boot, there is a scheduled task `updateNodeExperiences` created with a complex delay strategy _can be seen below_.
 
 ![Update Node Experiences](assets/images/nem-technical-zoom-in-update-node-experiences-scheduled-task.png)
 
 When this task is triggered, `NodeExperiencesUpdater` makes an authenticated call to `/node/experiences` on a peer (selected using `PreTrustAwareNodeSelector`) and stores the `NodeExperiencesPair`(which then will be used to calculate the trust score to the nodes) in the local cache.
 
+`NodeExperience` represents experience one node has with another node and consists of `successfulCalls`, `failedCalls` and `lastUpdateTime` fields.
+
+Then this information is used in the trust score calculation.
+
+### Eigentrust Algorithm
+EigenTrust++ is a reputation management algorithm that was developed to improve the accuracy and efficiency of reputation systems in peer-to-peer (P2P) networks. It is based on the idea of using the collective behavior of a group of peers to evaluate the trustworthiness of individual peers.
+
+> “Having a reputation system for nodes allows nodes to select their communication partner according to the trust values for other nodes. This should also help balance the load of the network because the selection of the communication partner only depends on a node’s honesty but not its importance.”\
+ https://nemproject.github.io/nem-docs/pages/Whitepapers/NEM_techRef.pdf
+
+The EigenTrust++ algorithm uses a combination of local and global reputation information to calculate the reputation of a node. Local reputation is based on the direct interactions of a node with its neighbours, while global reputation is based on the collective behaviour of the entire network.
+
+![EigenTrust](assets/images/nem-technical-zoom-in-eigentrust.png)
+
+In the `EigenTrust` algorithm, malicious nodes could collude and report
+low trust values for honest nodes and high trust values for dishonest nodes. To mitigate this risk NEM uses `EigenTrust++` algorithm which additionally calculates a node's credibility based on the shared experiences of that node with other nodes; if the experiences are similar then we can say the node is more credible/honest.
+
+`EigenTrustPlusPlus` class extends `EigenTrust` class in the NEM code.
+
+![EigenTrustPlusPlust](assets/images/nem-technical-zoom-in-eigentrustplusplus.png)
+
 ## How does the block synchronization work?
 
 ## How does the harvesting work?
-
-
