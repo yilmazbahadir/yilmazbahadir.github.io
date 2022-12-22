@@ -12,6 +12,8 @@ This article aims to provide a technical zoom-in on the [NEM NIS code](https://g
 - Flyway for database migration
 - Maven for dependency and build management
 
+## High Level View
+![Components](assets/images/nem-technical-zoom-in-components.png)
 ## Modules
 ![Modules](/assets/images/nem-technical-zoom-in-modules.png)
 
@@ -37,7 +39,7 @@ Packages within this module starts with `org.nem.peer`. This module provides bas
  Main functionalities are, Logging, bootstrapping, serialization, property file handling and server instantiation.
 
 ### NIS
-(NEM Infrastructure Server): NIS is the core component of the NEM platform, responsible for maintaining the integrity and security of the blockchain. It handles tasks such as validating transactions, creating new blocks, and managing the overall state of the network depending on the `core`, `deploy`, `peer` modules.
+(NEM Infrastructure Server) NIS is the core component of the NEM platform, responsible for maintaining the integrity and security of the blockchain. It handles tasks such as validating transactions, creating new blocks, and managing the overall state of the network depending on the `core`, `deploy`, `peer` modules.
 This Java package provides everything needed to launch a NEM node.
 
 ## Building from source
@@ -46,7 +48,7 @@ git clone https://github.com/NemProject/nem.git
 cd nem
 mvn clean package -DskipTests
 ```
-## Bootstrapping NEM
+## Bootstrapping NIS
 In the NEM blockchain, `CommonStarter` class(_main_) is the entry point to bootstrapping NEM Infrastructure Server (NIS) node.
 
 To bootstrap a NIS node, the CommonStarter class performs the following tasks:
@@ -272,5 +274,5 @@ Here is how the `hit` and `target` values are calculated:
 
 ## Wrapping up
 
-I tried to take a closer look NEM codebase with this article. I'm sure it is barely a scratch on the surface. The goal here was to expose some leads for you to follow easier for a better understanding in a short article. I hope it helps :)\
+I tried to take a closer look at NEM codebase in this article. I'm sure it is barely a scratch on the surface. The goal here was to expose some leads for you to follow easier for a better understanding in a short article. I hope it helps :)\
 Thank you for reading!
