@@ -254,3 +254,23 @@ See the below image explaining the time synchronization logic(read more on https
 
 See `NisTimeSynchronizer` class which does the time sample collection in the code.
 ![NisTimeSynchronizer](assets/images/nem-technical-zoom-nis-time-sync-class.png)
+
+## Harvesting
+
+There is a scheduled task called `FORAGING` which is responsible for running the harvesting logic _every second_(see `PeerNetworkScheduler.addForagingTask`).
+
+`HarvestingTask.harvest` method is being called by this scheduled task, which drops the expired transactions first, then tries to harvest a block for every `unlockedAccount`(accounts that are delegating to that node).
+
+![BlockGenerator.generateNextBlock](assets/images/nem-technical-zoom-in-generate-next-block.png)
+
+`state.isHit()` method checks if the calculated `hit` is lower than the `target` then it's a `hit`, meaning it is a successful candidate block; if the all of the below validations passes and block score is the best amongst other candidates.
+
+![Aggregate Block Validators](assets/images/nem-technical-zoom-in-aggregate-validators.png)
+
+Here is how the `hit` and `target` values are calculated:
+![Hit and Target Calculations](assets/images/nem-technical-zoom-in-hit-target-calculations.png)
+
+## Wrapping up
+
+I tried to take a closer look NEM codebase with this article. I'm sure it is barely a scratch on the surface. The goal here was to expose some leads for you to follow easier for a better understanding in a short article. I hope it helps :)\
+Thank you for reading!

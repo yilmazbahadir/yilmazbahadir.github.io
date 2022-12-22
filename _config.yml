@@ -33,6 +33,7 @@ plugins:
 # A list of the pages to display in the navigation bar
 header_pages:
   - new-nem-testnet
+  - a-technical-zoom-in-to-nem
 
 # Exclude from processing.
 # The following items will not be processed, by default. Create a custom list
