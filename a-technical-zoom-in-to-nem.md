@@ -25,7 +25,6 @@ Packages within this module starts with `org.nem.core`. These packages provide t
 - time provider and synchronization
 - common utility (collections, encoders)
 
-TODO: A screenshot of the core packages??
 ### Peer
 Packages within this module starts with `org.nem.peer`. This module provides base methods for
 - synchronization, network state
@@ -170,7 +169,7 @@ First off, all of the REST controllers are annotated with `@RestController` whic
 ![request-mapping-annotation](assets/images/nem-technical-zoom-in-annotation-request-mapping.png)
 
 NEM API annotations:
-- AuthenticatedApi: Expects a node challenge param, signs the challenge data with the private key, attaches signature to the response for the caller to verify
+- AuthenticatedApi: Expects a node challenge param(a random 64-byte payload), signs the challenge data with the private key, attaches signature to the response for the caller to verify
 - P2PApi: Marker annotation denoting callable by peers
 - ClientApi: Marker annotation denoting the api is callable by the client
 - PublicApi: Marker annotation for a public api (should be all GET method based), any PublicApi is also a ClientApi
@@ -183,11 +182,11 @@ For P2P endpoints please see `org.nem.core.node.NisPeerId` class and also `org.n
 ![Rest Request Flow](/assets/images/nem-technical-zoom-in-rest-req-flow.png)
 
 ## How does peer to peer communication work?
-When the node boots, while it's booting the peer network, it loads the initial(pre-trusted) peer list from the `peer-config_[mainnet|testnet].json` file.
+When the node boots, during the peer network boot, it loads the initial(pre-trusted) peer list from the `peer-config_[mainnet|testnet].json` file.
 
-During the boot there created a scheduled task(in `PeerNetworkScheduler.addTasks`) to refresh the peer nodes.
+During the boot there is a scheduled task created with the name `REFRESH` (in `PeerNetworkScheduler.addTasks`) to refresh the peer nodes.
 
-`NodeRefresher` refreshes the peer list, by making authenticated calls to `node/info` and `/node/peer-list/active` and stores the info in the local cache on a peer (selected using `PreTrustAwareNodeSelector`).
+`NodeRefresher` (triggered by the scheduled task `REFRESH`) refreshes the peer list, by making authenticated calls to `node/info` and `/node/peer-list/active` and stores the info in the local cache on a peer (selected using `PreTrustAwareNodeSelector`).
 
 Peers call `@P2PApi` annotated API endpoints, mostly authenticated by sending a challenge and verifying the returned signature(whether signed by the expected node).
 
@@ -204,7 +203,7 @@ When this task is triggered, `NodeExperiencesUpdater` makes an authenticated cal
 
 Then this information is used in the trust score calculation.
 
-### Eigentrust Algorithm
+### Eigentrust(++) Algorithm
 EigenTrust++ is a reputation management algorithm that was developed to improve the accuracy and efficiency of reputation systems in peer-to-peer (P2P) networks. It is based on the idea of using the collective behavior of a group of peers to evaluate the trustworthiness of individual peers.
 
 > “Having a reputation system for nodes allows nodes to select their communication partner according to the trust values for other nodes. This should also help balance the load of the network because the selection of the communication partner only depends on a node’s honesty but not its importance.”\
@@ -215,12 +214,43 @@ The EigenTrust++ algorithm uses a combination of local and global reputation inf
 ![EigenTrust](assets/images/nem-technical-zoom-in-eigentrust.png)
 
 In the `EigenTrust` algorithm, malicious nodes could collude and report
-low trust values for honest nodes and high trust values for dishonest nodes. To mitigate this risk NEM uses `EigenTrust++` algorithm which additionally calculates a node's credibility based on the shared experiences of that node with other nodes; if the experiences are similar then we can say the node is more credible/honest.
+low trust values for honest nodes and high trust values for dishonest nodes. To mitigate this risk NEM uses `EigenTrust++` algorithm which additionally calculates and uses a node's credibility based on the shared experiences of that node with other nodes; if the experiences are similar then we can say the node is more credible/honest.
 
 `EigenTrustPlusPlus` class extends `EigenTrust` class in the NEM code.
 
-![EigenTrustPlusPlust](assets/images/nem-technical-zoom-in-eigentrustplusplus.png)
+![EigenTrustPlusPlus](assets/images/nem-technical-zoom-in-eigentrustplusplus.png)
 
-## How does the block synchronization work?
+Before any peers picked by the local node to interact with, it picks the peer considering the trust score of the candidate peer.
 
-## How does the harvesting work?
+## Block synchronization
+As already mentioned, recurring tasks are being handled with the scheduled tasks that are created in the `PeerNetworkScheduler` class.
+
+One of the scheduled tasks is `PeerNetwork.synchronize()` with the name `SYNC` which is scheduled to run every 3 seconds.
+
+This scheduled task runs  `BlockChain.synchronizeNode` in the end, as it can be seen in the following image _call hierarchy_.
+
+![Synchronize Node](assets/images/nem-technical-zoom-sync-node.png)
+
+Block synchronization logic can be seen in the following image.
+![BlockChain synchronize node](assets/images/nem-technical-zoom-blockchain-sync.png)
+
+One thing to note is, during synchronization when `BlockChainConfigurationBuilder.blockChainRewriteLimit`(default 360) is exceeded the synchronization will not be successful(which will require a synch from scratch).
+
+![Block Chain rewrite limit](assets/images/nem-technical-zoom-blockchain-rewirite-limit.png)
+
+## Broadcasting data
+The data(Transaction(s), block(s)) to be broadcast is enqueued to `BroadcastBuffer`.
+The scheduled task with the name `BROADCAST BUFFERED ENTITIES` pushes the buffered entities to the peers _every second_.
+![NodeBroadcaster](assets/images/nem-technical-zoom-in-node-broadcaster.png)
+![Broadcast call hierarchy](assets/images/nem-technical-zoom-in-broadcast-call-hierarchy.png)
+`PushService.pushTransaction()` and `PushService.pushBlock()` methods are being utilized through the process.
+
+## Time synchronization
+NEM blockchain uses a custom time synchronization logic which is triggered by a scheduled task named `TIME SYNCHRONIZATION`. It starts with synchronizing every minute then over time, after getting mature, it starts to sync every 9 hours.
+
+See the below image explaining the time synchronization logic(read more on https://nemproject.github.io/nem-docs/pages/Whitepapers/NEM_techRef.pdf).
+
+![Time Synchronization Logic](assets/images/nem-technical-zoom-time-synch-explained.png)
+
+See `NisTimeSynchronizer` class which does the time sample collection in the code.
+![NisTimeSynchronizer](assets/images/nem-technical-zoom-nis-time-sync-class.png)
